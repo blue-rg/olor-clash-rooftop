@@ -875,6 +875,8 @@ function emit(type,params={}){
 function leaveArena(){return bridge?.leave()||Promise.resolve();}
 
 const connectFirebase=socketConnect;
+const COLOR_CLASH_BUILD='2026-11-04-ko-fix-2';
+console.info('COLOR CLASH build:',COLOR_CLASH_BUILD);
 /* COLOR CLASH | GitHub Pages + Firebase Realtime Database · 3rd person 3D */
 const $=id=>document.getElementById(id);
 const TEAM_COLORS=['#ff5e95','#3baff1','#f6bd45','#32c4ad'];
@@ -902,7 +904,15 @@ let lookPointer=null,mouseLocked=false,joystickState={x:0,y:0};
 const keys=new Set();
 const ui={intro:$('screenIntro'),lobby:$('screenLobby'),end:$('screenEnd'),hud:$('hud'),
   quiz:$('quizPanel'),help:$('helpOverlay')};
-const setVisible=(el,show)=>el.classList.toggle('hidden',!show);
+const setVisible=(el,show)=>{
+  if(!el)return;
+  el.classList.toggle('hidden',!show);
+  // 별도로 관리하여 시작 직후 아웃 화면이 남아 있지 않게 함
+  if(el.id==='knockoutOverlay'){
+    el.hidden=!show;
+    el.style.setProperty('display',show?'flex':'none','important');
+  }
+};
 const showScreen=(next)=>{mode=next;setVisible(ui.intro,next==='intro');setVisible(ui.lobby,next==='lobby');setVisible(ui.end,next==='ended');setVisible(ui.hud,next==='playing');
   setVisible($('crosshair'),next==='playing'&&!quizOpen);
   $('crosshair').classList.toggle('visible',next==='playing'&&!quizOpen);};
@@ -922,7 +932,7 @@ function handleMessage(m){
   }
   if(m.type==='started'){
     status='playing';gameActive=true;clockTime=m.msLeft;setCurrentMatchMode(m.matchMode);
-    players=m.players;initRound(m.players);showScreen('playing');updateKnockoutState();
+    players=m.players;setVisible($('knockoutOverlay'),false);myKnockoutShown=false;initRound(m.players);showScreen('playing');updateKnockoutState();
     if(isTouch){$('shootHint').textContent='경기장을 짧게 터치하면 그 위치로 발사! 드래그는 시점 회전';
       setTimeout(()=>setVisible($('shootHint'),false),4200);}
     else{$('shootHint').textContent='트랙패드 클릭/터치 = 해당 지점 발사 · 드래그 = 시점 회전';setVisible($('shootHint'),true);}
@@ -1074,15 +1084,27 @@ function syncRespawnPose(){
   }
 }
 function updateKnockoutState(){
-  if(mode!=='playing'){setVisible($('knockoutOverlay'),false);return;}
+  const overlay=$('knockoutOverlay');
+  if(mode!=='playing'){
+    setVisible(overlay,false);myKnockoutShown=false;return;
+  }
   const me=players.find(p=>p.id===myId);
-  const remaining=Math.max(0,(me?.deadUntil||0)-serverNowClient());
-  const dead=remaining>0;
-  setVisible($('knockoutOverlay'),dead);
+  const zones=Array.isArray(me?.segments)?me.segments:Object.values(me?.segments||{});
+  // 아웃은 단순히 시간 값으로 판정하지 않음. 같은 상대 색 6칸도 확인.
+  const sixPainted=zones.length===6 && Number.isInteger(zones[0]) &&
+    zones[0]>=0 && zones[0]<4 && zones.every(c=>c===zones[0]);
+  const deadline=Number(me?.deadUntil)||0;
+  const remaining=Math.max(0,deadline-serverNowClient());
+  const dead=Boolean(me && sixPainted && remaining>0);
+  setVisible(overlay,dead);
   if(dead){
     $('respawnSecs').textContent=Math.max(1,Math.ceil(remaining/1000));
-    if(!myKnockoutShown){myKnockoutShown=true;closeQuiz();notify('아웃! 2초 후 부활해요.','bad');}
-  }else{myKnockoutShown=false;}
+    if(!myKnockoutShown){
+      myKnockoutShown=true;closeQuiz();notify('아웃! 2초 후 부활해요.','bad');
+    }
+  }else{
+    myKnockoutShown=false;
+  }
 }
 
 function drawMinimap(){
@@ -1761,7 +1783,7 @@ async function initialize(){
     loading.textContent='3D 라이브러리를 불러오지 못했어요. 인터넷 연결과 CDN 접근을 확인해 주세요.';
     console.error('Three.js load failed',err);return;
   }
-  try{buildWorld();requestAnimationFrame(animate);
+  try{setVisible($('knockoutOverlay'),false);buildWorld();requestAnimationFrame(animate);
     void connectFirebase(handleMessage);setVisible($('loadingOverlay'),false);showScreen('intro');
   }catch(e){console.error(e);loading.textContent='3D를 실행할 수 없어요. 그래픽 가속이 켜진 최신 브라우저를 사용해 주세요.';}
 }
