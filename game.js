@@ -1150,14 +1150,14 @@ function renderQuizResult(result){
 }
 function openQuiz(){
   if(mode!=='playing'||(players.find(p=>p.id===myId)?.deadUntil||0)>serverNowClient())return;
-  quizOpen=true;setVisible(ui.quiz,true);$('crosshair').classList.remove('visible');
+  quizOpen=true;setVisible(ui.quiz,true);setVisible($('myPaintMeter'),false);$('crosshair').classList.remove('visible');
   
   if(document.pointerLockElement===$('world'))document.exitPointerLock();
   if(!activeQuiz||quizSubmitted){activeQuiz=null;setVisible($('quizFeedback'),false);
     $('quizQuestion').textContent='소수·분수의 비 문제를 불러오는 중이에요.';
     $('quizChoices').replaceChildren();emit('quizRequest');}
 }
-function closeQuiz(){quizOpen=false;setVisible(ui.quiz,false);if(mode==='playing'){$('crosshair').classList.add('visible');if(!isTouch&&!mouseLocked)setVisible($('shootHint'),true);}}
+function closeQuiz(){quizOpen=false;setVisible(ui.quiz,false);setVisible($('myPaintMeter'),mode==='playing');if(mode==='playing'){$('crosshair').classList.add('visible');if(!isTouch&&!mouseLocked)setVisible($('shootHint'),true);}}
 function nextQuiz(){activeQuiz=null;quizSubmitted=false;setVisible($('quizFeedback'),false);setVisible($('quizNext'),false);
   $('quizQuestion').textContent='다음 문제를 불러오는 중이에요.';$('quizChoices').replaceChildren();emit('quizRequest');}
 function toggleQuiz(){quizOpen?closeQuiz():openQuiz()}
@@ -1488,13 +1488,13 @@ function buildWorld(){
   });
 }
 function makeNameTag(p){
-  const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');
-  ctx.fillStyle='rgba(25,38,73,0.84)';ctx.beginPath();ctx.roundRect(10,16,492,96,25);ctx.fill();
-  ctx.fillStyle=COLORS[p.slot];ctx.beginPath();ctx.arc(50,64,17,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='white';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 45px sans-serif';ctx.fillText(p.name,287,64,380);
+  const c=document.createElement('canvas');c.width=384;c.height=96;const ctx=c.getContext('2d');
+  ctx.fillStyle='rgba(25,38,73,0.78)';ctx.beginPath();ctx.roundRect(8,14,368,68,22);ctx.fill();
+  ctx.fillStyle=COLORS[p.slot];ctx.beginPath();ctx.arc(38,48,12,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='white';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 31px sans-serif';ctx.fillText(p.name,214,48,280);
   const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;
   const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));
-  spr.scale.set(2.8,.7,1);spr.position.y=3.12;return spr;
+  spr.scale.set(1.95,.48,1);return spr;
 }
 function makeLimb(w,h,color){
   const m=sphere(1,color,16);m.scale.set(w,h,w);return m;
