@@ -894,6 +894,7 @@ function setCurrentMatchMode(choice){
   COLORS=currentMatchMode==='ffa'?[...TEAM_COLORS]:[TEAM_COLORS[0],TEAM_COLORS[1],TEAM_COLORS[0],TEAM_COLORS[1]];
 }
 let THREE,renderer,scene,camera,weapon,weaponBarrel;
+// 로컬 플레이어는 1인칭으로 보고 손에 든 총만 카메라 앞에 표시합니다.
 let mode='intro',myId='',roomCode='',hostId='',status='lobby';
 let players=[],avatarMap=new Map(),paintFX=[],shotsFX=[],myPose={x:0,z:12,yaw:0,pitch:0};
 let mySpawnVersion=0,myKnockoutShown=false;
@@ -1221,8 +1222,7 @@ function aimAtPoint(clientX,clientY){
   const cursor=new THREE.Vector2(((clientX-rect.left)/rect.width)*2-1,1-((clientY-rect.top)/rect.height)*2);
   const cast=new THREE.Raycaster();camera.updateMatrixWorld(true);cast.setFromCamera(cursor,camera);
   let best=54;
-  // Determine the foreground surface under the cursor. Third-person camera perspective
-  // differs from gun origin, so reproject the target to the real server shot origin.
+  // 터치 위치를 실제 탄도 원점에 투영합니다. FPS에서도 클릭한 점을 향해 발사합니다.
   for(const c of COVERS){
     const block=new THREE.Box3(new THREE.Vector3(c.x-c.w/2,0,c.z-c.d/2),
       new THREE.Vector3(c.x+c.w/2,c.h+.15,c.z+c.d/2));
@@ -1479,13 +1479,57 @@ function buildWorld(){
     }
     scene.add(cloud);
   }
-  // Camera is not parented to a weapon: the visible hero has its own animated paint blaster.
-  weapon=new THREE.Group();weaponBarrel={material:{color:{set:()=>{}}}};
+  // FPS viewmodel: 내 전신을 숨기고 카메라 우하단에 총만 표시.
+  buildFirstPersonBlaster();
   camera.position.set(0,3.4,17);camera.lookAt(0,1.7,11);
   window.addEventListener('resize',()=>{
     renderer.setSize(window.innerWidth,window.innerHeight,false);
     camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();
   });
+}
+// 내 화면 전용 물감총. 다른 캐릭터의 3D 총과 분리되어 카메라를 따라옵니다.
+function buildFirstPersonBlaster(){
+  weapon=new THREE.Group();weapon.name='local-fps-paint-blaster';
+  weapon.position.set(.46,-.43,-.91);
+  weapon.rotation.set(.015,-.22,-.065);
+  weapon.visible=false;camera.add(weapon);
+  const paintPieces=[];
+  const add=(mesh,paint=false)=>{
+    mesh.castShadow=false;mesh.receiveShadow=false;
+    // 화면 앞에 표시되는 무기만 장애물에 가려지지 않도록 마지막에 그립니다.
+    mesh.material.depthTest=false;mesh.material.depthWrite=false;
+    mesh.renderOrder=900;
+    weapon.add(mesh);
+    if(paint)paintPieces.push(mesh);
+    return mesh;
+  };
+  const caseMain=add(box(.41,.27,.72,'#ecf5ff'));
+  const lower=add(box(.35,.13,.62,'#273750'));
+  lower.position.set(0,-.17,.04);
+  const accent=add(box(.44,.10,.57,'#fb639b'),true);
+  accent.position.set(0,.17,.035);
+  const side=add(box(.075,.16,.40,'#829cb3'));
+  side.position.set(-.24,0,-.02);
+  const grip=add(box(.14,.30,.21,'#18243c'));
+  grip.position.set(.06,-.32,.19);grip.rotation.x=-.19;
+  const tip=add(cylinder(.115,.12,.63,'#2f4765',20));
+  tip.rotation.x=Math.PI/2;tip.position.set(0,.01,-.54);
+  const muzzle=add(cylinder(.153,.153,.135,'#fb639b',20),true);
+  muzzle.rotation.x=Math.PI/2;muzzle.position.set(0,.01,-.88);
+  const tank=add(sphere(.225,'#fb639b',20),true);
+  tank.position.set(0,.29,.20);tank.scale.set(.92,.77,1.10);
+  const tankCap=add(cylinder(.135,.135,.10,'#f9fdff',16));
+  tankCap.position.set(0,.48,.22);
+  const optic=add(box(.12,.095,.16,'#203651'));
+  optic.position.set(0,.24,-.28);
+  weapon.userData.paintPieces=paintPieces;
+  weapon.userData.home={x:.46,y:-.43,z:-.91};
+  weaponBarrel=muzzle;
+}
+function updateFirstPersonWeaponColor(slot){
+  if(!weapon)return;
+  const c=COLORS[slot]||'#fb639b';
+  for(const mesh of weapon.userData.paintPieces||[])mesh.material.color.set(c);
 }
 function makeNameTag(p){
   const c=document.createElement('canvas');c.width=384;c.height=96;const ctx=c.getContext('2d');
@@ -1567,19 +1611,20 @@ function createAvatar(p){
   const cap=cylinder(.23,.23,.10,'#f3f6ff',20);cap.position.set(0,.95,.79);torsoPivot.add(cap);
   const hose=new THREE.Mesh(new THREE.TorusGeometry(.31,.049,8,24,Math.PI*1.26),mat('#1b273c'));
   hose.rotation.y=Math.PI/2;hose.position.set(.30,.58,.46);torsoPivot.add(hose);
-  // Humanlike shoulder/elbow/hand groups and an oversized neon toy paint blaster.
+  // 양팔을 각각 어깨 → 팔꿈치 → 손목으로 연결합니다.
+  // 손목 목표는 물감총 손잡이(오른손), 앞쪽 받침(왼손)에 맞춥니다.
   const arms=[];
   for(const side of [-1,1]){
-    const shoulder=new THREE.Group();shoulder.position.set(side*.48,.85,0);torsoPivot.add(shoulder);
-    const shoulderCap=makeLimb(.235,.25,color);shoulderCap.position.set(0,-.10,0);shoulder.add(shoulderCap);
-    const upper=makeLimb(.17,.29,'#293753');upper.position.set(side*.02,-.30,-.09);shoulder.add(upper);
-    const elbow=new THREE.Group();elbow.position.set(side*.05,-.50,-.19);shoulder.add(elbow);
-    const forearm=makeLimb(.15,.24,'#29334a');forearm.position.set(0,-.17,-.16);forearm.rotation.x=-.42;elbow.add(forearm);
-    const glove=makeLimb(.16,.14,'#101e30');glove.position.set(0,-.31,-.23);elbow.add(glove);
-    arms.push({shoulder,elbow});
+    const shoulderPos=new THREE.Vector3(side*.46,.83,-.03);
+    const shoulderCap=makeLimb(.228,.22,color);shoulderCap.position.copy(shoulderPos);torsoPivot.add(shoulderCap);
+    const upper=makeLimb(.17,.30,'#293753');torsoPivot.add(upper);
+    const elbowJoint=makeLimb(.169,.167,'#41516a');torsoPivot.add(elbowJoint);
+    const forearm=makeLimb(.145,.30,'#29334a');torsoPivot.add(forearm);
+    const glove=makeLimb(.155,.13,'#121d31');torsoPivot.add(glove);
+    arms.push({side,shoulderPos,upper,elbowJoint,forearm,glove});
   }
-  // Gun points along local -Z; shots are server-authoritative and leave a visible trail.
-  const blaster=new THREE.Group();blaster.position.set(.26,.51,-.59);torsoPivot.add(blaster);
+  // 다른 플레이어의 총은 몸 가운데가 아니라 오른손 쪽에 위치.
+  const blaster=new THREE.Group();blaster.position.set(.28,.49,-.57);torsoPivot.add(blaster);
   addPanel(blaster,.54,.28,.71,'#e7edf7',0,0,0);
   addPanel(blaster,.53,.14,.51,color,0,.17,.06);
   const grip=addPanel(blaster,.17,.30,.18,'#1b2b45',.07,-.24,.20);grip.rotation.x=.12;
@@ -1587,6 +1632,8 @@ function createAvatar(p){
   const nozzleRing=cylinder(.175,.175,.13,color,18);nozzleRing.rotation.x=Math.PI/2;nozzleRing.position.set(0,.01,-.95);blaster.add(nozzleRing);
   const tank=sphere(.24,color,16);tank.position.set(0,.26,.25);tank.scale.set(1,.8,1.15);blaster.add(tank);
   const barrel=blaster;
+  // 팔꿈치와 손이 총의 손잡이와 받침을 실제로 잡도록 첫 자세도 맞춥니다.
+  poseHeldBlasterArms({arms,blaster,recoil:0},0,0);
   const ring=new THREE.Mesh(new THREE.RingGeometry(.61,.68,40),new THREE.MeshBasicMaterial({color,side:THREE.DoubleSide,transparent:true,opacity:.50,depthWrite:false}));
   ring.rotation.x=-Math.PI/2;ring.position.y=.045;group.add(ring);
   const tag=makeNameTag(p);tag.position.y=3.72;group.add(tag);
@@ -1594,8 +1641,35 @@ function createAvatar(p){
     blaster,ring,phase:Math.random()*6,runStrength:0,lastPos:{x:p.x,z:p.z},recoil:0,hitAnim:0,
     targetX:p.x,targetZ:p.z,targetYaw:p.yaw,lastSegments:'',slot:p.slot,segments:[],spawnVersion:p.spawnVersion||0,spawnPulse:0,isSliding:false,slideBlend:0};
 }
+// 캡슐 형태의 팔을 두 관절점 사이에 연결. 팔이 항상 총을 향하게 합니다.
+function putLimbBetween(mesh,a,b){
+  mesh.position.copy(a).add(b).multiplyScalar(.5);
+  const axis=new THREE.Vector3().subVectors(b,a),length=axis.length();
+  if(length<.001)return;
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis.multiplyScalar(1/length));
+  mesh.scale.y=length*.58; // 관절 사이를 살짝 겹쳐 빈틈 없는 팔 모양
+}
+function poseHeldBlasterArms(av,step=0,recoil=0){
+  if(!av.arms)return;
+  const kick=recoil*.55;
+  const rightHand=new THREE.Vector3(.35,.23,-.37+kick);
+  const leftHand=new THREE.Vector3(.005,.43,-.83+kick);
+  for(const arm of av.arms){
+    const right=arm.side===1;
+    const shoulder=arm.shoulderPos;
+    const elbow=right
+      ?new THREE.Vector3(.66,.39+Math.abs(step)*.016,-.09+kick*.2)
+      :new THREE.Vector3(-.46,.42+Math.abs(step)*.016,-.42+kick*.2);
+    const hand=right?rightHand:leftHand;
+    putLimbBetween(arm.upper,shoulder,elbow);
+    putLimbBetween(arm.forearm,elbow,hand);
+    arm.elbowJoint.position.copy(elbow);
+    arm.glove.position.copy(hand);
+  }
+}
 function updateAvatarVisual(av,p){
-  av.group.visible=!(p.deadUntil>0);
+  // 자기 자신은 1인칭으로 보기 때문에 3D 몸·이름표·등의 물감통을 렌더하지 않음.
+  av.group.visible=p.id!==myId && !(p.deadUntil>0);
   const signature=JSON.stringify(p.segments||[]);
   if(signature===av.lastSegments)return;
   av.lastSegments=signature;
@@ -1629,6 +1703,7 @@ function initRound(data){
     walkingVelocity={x:0,z:0};slideExpires=0;
   }
   synchronizeAvatars();updateHUD();closeQuiz();activeQuiz=null;quizSubmitted=false;
+  if(me)updateFirstPersonWeaponColor(me.slot);
 }
 function canStand(x,z){
   if(Math.abs(x)>ARENA||Math.abs(z)>ARENA)return false;
@@ -1663,31 +1738,13 @@ function movePlayer(dt){
   if(canStand(myPose.x,myPose.z+dz))myPose.z+=dz;else walkingVelocity.z=0;
   return Math.min(1,Math.hypot(walkingVelocity.x,walkingVelocity.z)/6);
 }
-function updateThirdCamera(dt){
+function updateFirstPersonCamera(dt){
   if(!camera)return;
-  const yaw=myPose.yaw,pitch=myPose.pitch;
-  const sideX=Math.cos(yaw),sideZ=-Math.sin(yaw);
-  const dist=4.4;
-  const followTarget=new THREE.Vector3(myPose.x,1.62,myPose.z);
-  const desired=new THREE.Vector3(myPose.x+Math.sin(yaw)*dist+sideX*.9,
-    2.90-Math.sin(pitch)*2.15,
-    myPose.z+Math.cos(yaw)*dist+sideZ*.9);
-  // Avoid embedding the camera inside solid cover.
-  const ray=new THREE.Ray(followTarget.clone(),desired.clone().sub(followTarget).normalize());
-  const length=desired.distanceTo(followTarget);
-  let safe=length;
-  for(const c of COVERS){
-    const cube=new THREE.Box3(new THREE.Vector3(c.x-c.w/2-.15,0,c.z-c.d/2-.15),
-      new THREE.Vector3(c.x+c.w/2+.15,c.h+.2,c.z+c.d/2+.15));
-    const hit=ray.intersectBox(cube,new THREE.Vector3());
-    if(hit){const d=hit.distanceTo(followTarget);if(d>0.3)safe=Math.min(safe,Math.max(1.0,d-.33));}
-  }
-  if(safe<length)desired.copy(followTarget).add(ray.direction.clone().multiplyScalar(safe));
-  const t=1-Math.exp(-Math.min(.06,dt)*10);
-  camera.position.lerp(desired,t);
-  const aim=new THREE.Vector3(myPose.x-Math.sin(yaw)*Math.cos(pitch)*12,
-    1.62+Math.sin(pitch)*12,myPose.z-Math.cos(yaw)*Math.cos(pitch)*12);
-  camera.lookAt(aim);
+  // 눈높이에서 직접 조준하는 FPS 시점. 총은 카메라의 오른쪽 아래에만 표시됩니다.
+  const eyeY=1.61-(myPose.slide?.21:0);
+  const target=new THREE.Vector3(myPose.x,eyeY,myPose.z);
+  camera.position.lerp(target,1-Math.exp(-Math.min(.06,dt)*22));
+  camera.rotation.set(myPose.pitch,myPose.yaw,0,'YXZ');
   camera.updateMatrixWorld(true);
 }
 function bulletTrail(from,to,by,hit){
@@ -1738,11 +1795,9 @@ function animate(now){requestAnimationFrame(animate);
       av.legs[1].pivot.rotation.x=-step*.58;
       av.legs[0].shin.rotation.x=Math.max(0,-step)*.53;
       av.legs[1].shin.rotation.x=Math.max(0,step)*.53;
-      av.arms[0].shoulder.rotation.x=-.62-step*.24;
-      av.arms[1].shoulder.rotation.x=-.75+step*.24;
-      av.arms[0].shoulder.rotation.z=-.17;
-      av.arms[1].shoulder.rotation.z=.16;
-      av.headJoint.rotation.x=isMine?-myPose.pitch*.25:0;
+      // 손을 몸통 아래에 고정하지 않고 총의 손잡이와 앞 받침에 계속 부착.
+      poseHeldBlasterArms(av,step,av.recoil);
+      av.headJoint.rotation.x=-(isMine?myPose.pitch:(players.find(p=>p.id===av.id)?.pitch||0))*.18;
       av.spawnPulse=Math.max(0,(av.spawnPulse||0)-dt*2);
       av.rig.scale.setScalar(1-.16*av.spawnPulse);
       av.rig.position.y+=Math.sin((1-av.spawnPulse)*Math.PI)*av.spawnPulse*.20;
@@ -1754,8 +1809,18 @@ function animate(now){requestAnimationFrame(animate);
       if(av.ring?.material)av.ring.material.opacity=.32+Math.sin(now*.004+av.phase)*.08;
     }
     if(local){local.targetX=myPose.x;local.targetZ=myPose.z;local.targetYaw=myPose.yaw;}
-    updateThirdCamera(dt);
+    updateFirstPersonCamera(dt);
+    const dead=(players.find(p=>p.id===myId)?.deadUntil||0)>serverNowClient();
+    if(weapon){
+      weapon.visible=gameActive&&!dead;
+      const home=weapon.userData.home;
+      const runBob=Math.sin(now*.014)*moving*.013;
+      gunKick=Math.max(0,gunKick-dt*1.6);
+      weapon.position.set(home.x+runBob,home.y+Math.abs(runBob)*.72,home.z+gunKick*.35);
+      weapon.rotation.set(.015+gunKick*.20,-.22,-.065+Math.sin(now*.009)*moving*.018);
+    }
   }else if(mode==='intro'||mode==='lobby'){
+    if(weapon)weapon.visible=false;
     // Idle cinematic camera pans over the rooftop arena behind menus.
     const a=now*.000065;
     camera.position.set(Math.sin(a)*8.0,5.2,15.5+Math.cos(a)*2.0);
@@ -1768,6 +1833,7 @@ function animate(now){requestAnimationFrame(animate);
     v.mesh.position.x+=v.vx*dt;v.mesh.position.y+=v.vy*dt;v.mesh.position.z+=v.vz*dt;
     v.vy-=9.5*dt;v.mesh.material.opacity=Math.max(0,Math.min(1,v.ttl*2));
     if(v.ttl<=0||v.mesh.position.y<.08){scene.remove(v.mesh);v.mesh.geometry.dispose();v.mesh.material.dispose();paintFX.splice(i,1);}}
+  if(weapon&&mode!=='playing')weapon.visible=false;
   renderer.render(scene,camera);
 }
 async function initialize(){
