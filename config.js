@@ -2,7 +2,7 @@
    apiKey가 비어 있으면 AI 연습 모드로 자동 실행됩니다.
    기존 math641 프로젝트의 웹 앱 설정에 표시된 apiKey를 아래에 붙여 넣으세요. */
 window.COLOR_CLASH_FIREBASE_CONFIG = {
-  apiKey: 'YOUR_FIREBASE_WEB_API_KEY',
+  apiKey: 'AIzaSyBq5QGwlJcbS7-HhLQsAf7vZ9L59k7pnaQ',
   authDomain: 'math641.firebaseapp.com',
   databaseURL: 'https://math641-default-rtdb.firebaseio.com',
   projectId: 'math641',
