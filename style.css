@@ -1,0 +1,66 @@
+/* COLOR CLASH ROOFTOP — game UI design. All gameplay is real-time 3D in game.js. */
+:root{--ink:#18223a;--sub:#7887a6;--pink:#fb4c97;--blue:#36ceee;--navy:#16203c;--ring:#fff4;--panel:#14223bdb;}
+html,body{background:#101b33;}button,input,select{font-family:inherit}
+#world{background:linear-gradient(135deg,#53cfee,#f0a5c1);}
+#skyWash{background:linear-gradient(180deg,#ffffff05,transparent 53%,#243a7520);}
+#vignette{background:radial-gradient(ellipse at 50% 48%,transparent 45%,#081a3356 100%);opacity:1;}
+.intro-screen{color:#fff;background:
+  linear-gradient(91deg,rgba(9,22,48,.96) 0%,rgba(13,25,51,.9) 26%,rgba(15,30,57,.48) 58%,rgba(15,27,50,.42) 100%),
+  url('./assets/rooftop-poster.webp') center center / cover no-repeat;}
+.intro-screen:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#050f263b 0%,transparent 40%,#060f2ca0 100%);pointer-events:none;}
+.intro-screen:after{content:'';position:absolute;width:430px;height:430px;left:-260px;bottom:0;border-radius:50%;background:#fd4c94;filter:blur(110px);opacity:.2;pointer-events:none;}
+.top-ribbon{height:84px;}
+.logo-small{color:white;font-size:20px;text-shadow:0 3px 18px #07132e88;letter-spacing:.6px}.logo-small:first-letter{color:#ff60a2}
+.top-right-meta,.bottom-ribbon{color:#f4f7ffab}.top-right-meta span{color:#fc5c9f}
+.intro-layout{max-width:1400px;min-height:calc(100% - 129px);grid-template-columns:minmax(0,1.1fr) minmax(335px,.72fr);gap:6vw;padding:20px clamp(28px,4.7vw,80px) 35px;}
+.intro-left{max-width:730px}.intro-left h1{font-size:clamp(43px,5.1vw,84px);letter-spacing:-3.4px;line-height:1.18;text-shadow:0 6px 30px #091c42a6;}
+.intro-left h1 em{color:#61ddf6;text-shadow:0 6px 31px #28c9f350;white-space:normal;}
+.intro-left h1 em span{color:#ff5a9d;}
+.intro-lede{color:#e7f0ffdd;text-shadow:0 2px 14px #09162fb4;max-width:615px;line-height:1.9}
+.intro-lede strong{color:#fff}
+.eyebrow{color:#8be8f7;text-shadow:0 2px 13px #071d46;letter-spacing:2px;}
+.eyebrow-mark{background:#ff4e96;color:#fff;box-shadow:0 3px 21px #f52a8066}
+.benefits{gap:8px;margin:23px 0 35px}.benefits span{color:#f4f9ff;border:1px solid #ffffff32;background:#091c3f83;box-shadow:0 8px 27px #0b193a35;backdrop-filter:blur(8px);padding:10px 12px}
+.intro-card{background:#071c3d8c;border:1px solid #e6f5ff24;box-shadow:0 18px 65px #081b4433;backdrop-filter:blur(12px);}
+.card-number{color:#ff75ab}.card-number i{background:#ffffff3a}.card-steps b{color:#fff}.card-steps small{color:#c9dff5aa}
+.intro-right:before{background:#ff4a93;filter:blur(85px);opacity:.42}
+.join-card{max-width:454px;border-radius:25px;border:1px solid #ffffffb0;background:#f8fbfff2;box-shadow:0 20px 70px #03102f99;backdrop-filter:blur(21px);}
+.join-card-head{color:#7586a0}.status-online{color:#159981}.join-card h2{color:#142443}.join-card p{color:#7487a1}
+.join-card .battle-mode-choose input:checked+span{box-shadow:0 2px 11px #4973db33}
+.join-card input{background:#fff;border:1px solid #dfe6f1}
+.main-btn{background:linear-gradient(105deg,#fa4d91,#ef6675 48%,#fda050);box-shadow:0 12px 25px #f3538e45;}
+.join-input-row button{background:#1b2d50}.join-mini{color:#8091a9}
+.bottom-ribbon{height:45px;background:#0c19355e;backdrop-filter:blur(8px);}
+.decor-one,.decor-two{display:none}
+/* Floating in-game panels: tactile, dark, sporty, readable over a busy scene */
+.brand-pill{background:#121d3bde;border:1px solid #ffffff26;color:#fff;box-shadow:0 8px 23px #101b3855}
+.brand-pill b{color:#fff}.brand-pill small{color:#9fb5de}.brand-glyph{background:linear-gradient(125deg,#fc4d97,#fe8851)}
+.center-timer{background:#101d3ae6;border:1px solid #ffffff31;border-radius:12px;box-shadow:0 7px 23px #02112566}
+.center-timer small{color:#a5bfdc}.center-timer strong{color:#f9f8ff}
+.mini-icon{right:0;background:#152341e8;color:#fff;border:1px solid #ffffff33}
+.mouse-mode-btn{position:absolute;right:50px;top:1px;pointer-events:auto;border:1px solid #ffffff50;background:#142341da;color:#fff;border-radius:12px;height:39px;padding:0 13px;font-size:11px;font-weight:900;box-shadow:0 8px 23px #07152b42;white-space:nowrap}
+.mouse-mode-btn.active{border-color:#5deafc;color:#78edff;box-shadow:0 0 0 2px #39dffa66}
+.camera-mode-info{position:absolute;z-index:15;top:81px;left:50%;transform:translateX(-50%);color:#fff;font-weight:900;font-size:11px;padding:8px 15px;border:1px solid #ffffff44;border-radius:999px;background:#0d1b3fcf;pointer-events:none}
+.score-player{background:#121e3bdf;border:1px solid #ffffff25;color:white;box-shadow:0 9px 24px #04132d4a}
+.score-player.me{border:2px solid var(--self-color,#54d8f5)}.score-val{color:#f3f5fd}.score-name{color:#fcfcff}.score-progress{background:#ffffff26}
+.team-roster{color:#bfcce7!important}
+.minimap-wrap{background:#14223ae6;border:1px solid #ffffff30;box-shadow:0 10px 28px #051b3655}
+.map-title{color:#d0def3}.minimap-wrap canvas{border:1px solid #ffffff35}
+.ammo-panel{background:#101d3deb;border-color:#ffffff27;box-shadow:0 12px 24px #08152f5e}
+.ammo-icon{background:linear-gradient(140deg,#ff428a,#ff9858)}
+.quiz-open{background:#fafdff;color:#112342;box-shadow:0 10px 24px #0d234a66;border:1px solid #ffffffa8}
+.quiz-open>span{color:#f34a8e}.desktop-fire{background:#f44388;color:#fff!important;border-color:#ffc1d6!important}
+.shoot-hint{background:#0d193fcd;color:#f5fbff;border:1px solid #ffffff37;text-shadow:none;backdrop-filter:blur(8px)}
+#crosshair{filter:drop-shadow(0 1px 2px #111b36) drop-shadow(0 0 3px #101d36)}
+#crosshair span{background:#f6fcff}#crosshair b{background:#ff478b;box-shadow:0 0 9px #ff4f99}
+.quiz-panel{background:#f9fbffec;border:1px solid #ffffffdc;box-shadow:0 17px 65px #07143295;backdrop-filter:blur(13px);}
+.quiz-label{color:#e64380}.quiz-topline b{color:#e64380}.next-q{background:#f45191}
+.loading-overlay{color:#fff;background:linear-gradient(120deg,#0c1933ee,#1b2d50db),url('./assets/rooftop-poster.webp') center/cover;}
+.loading-overlay small{color:#d2e4f8}.loading-glyph{background:linear-gradient(130deg,#ff3e91,#2bd2f0)}
+.lobby-screen,.end-screen{background:#07142fd4;backdrop-filter:blur(10px)}
+.lobby-card,.end-card{border:1px solid #fff9;box-shadow:0 22px 70px #050f2b9e}
+/* Smaller screens and classroom laptops */
+@media(max-width:1100px){.intro-layout{gap:3vw}.intro-left h1{font-size:clamp(40px,4.5vw,66px)}.intro-lede{font-size:14px}.benefits span{font-size:10px}.intro-card{padding:19px}}
+@media(max-width:850px){.intro-layout{grid-template-columns:1fr 1fr;padding:18px;gap:14px}.intro-left h1{font-size:39px;letter-spacing:-1.8px}.join-card{padding:22px}.intro-card{display:none}.benefits{margin-bottom:14px}.minimap-wrap{top:110px}.mouse-mode-btn{font-size:10px}}
+@media(max-width:700px){.intro-layout{grid-template-columns:1fr;padding:12px 20px 30px}.intro-left h1{font-size:clamp(38px,9vw,50px)}.intro-lede{font-size:13px}.intro-screen{background-position:43% center}.benefits{margin-top:14px}.join-card{padding:25px;background:#f9fbfff4}.top-ribbon{height:56px}.mouse-mode-btn{display:none}.side-score{left:10px;top:95px;width:160px}.minimap-wrap{right:10px}.hud-bottom{bottom:12px}.center-timer{top:2px}}
+@media(max-height:740px) and (min-width:700px){.intro-layout{padding-top:8px;padding-bottom:8px}.intro-left h1{margin:13px 0}.intro-lede{line-height:1.52}.benefits{margin:14px 0}.intro-card{padding:12px 18px}.join-card{padding:23px}.join-card h2{margin:16px 0 8px}.join-card p{margin-bottom:15px}.join-mini{margin-top:12px}.or-divider{margin:15px 0 11px}}

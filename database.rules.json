@@ -1,0 +1,57 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$room": {
+        ".read": "auth != null",
+        "meta": {
+          ".write": "auth != null && ((!data.exists() && newData.child('host').val() === auth.uid) || (data.child('host').val() === auth.uid))",
+          ".validate": "newData.hasChildren(['host','phase','botsWanted','createdAt','round','online']) && newData.child('host').isString() && (!data.exists() || newData.child('host').val() === data.child('host').val()) && (newData.child('phase').val() === 'lobby' || newData.child('phase').val() === 'starting' || newData.child('phase').val() === 'playing' || newData.child('phase').val() === 'ended') && newData.child('botsWanted').isNumber() && newData.child('botsWanted').val() >= 0 && newData.child('botsWanted').val() <= 3 && newData.child('round').isNumber() && newData.child('round').val() >= 0 && newData.child('round').val() < 10000 && newData.child('createdAt').isNumber() && newData.child('online').isBoolean()"
+        },
+        "seats": {
+          "$slot": {
+            ".write": "auth != null && ($slot === '0' || $slot === '1' || $slot === '2' || $slot === '3') && ((!data.exists() && root.child('rooms/'+$room+'/meta/phase').val() === 'lobby' && newData.child('uid').val() === auth.uid && newData.child('bot').val() === false) || (data.child('uid').val() === auth.uid && !newData.exists()) || (root.child('rooms/'+$room+'/meta/host').val() === auth.uid && ((!data.exists() && newData.child('bot').val() === true && newData.child('uid').val() === 'bot-' + $slot) || (data.child('bot').val() === true && !newData.exists()))))",
+            ".validate": "newData.hasChildren(['uid','name','slot','bot']) && newData.child('uid').isString() && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 12 && newData.child('slot').isNumber() && newData.child('slot').val() >= 0 && newData.child('slot').val() <= 3 && newData.child('bot').isBoolean()"
+          }
+        },
+        "poses": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && (!newData.exists() || (root.child('rooms/'+$room+'/meta/phase').val() === 'playing' && root.child('rooms/'+$room+'/seats/'+newData.child('slot').val()+'/uid').val() === auth.uid))",
+            ".validate": "newData.hasChildren(['x','z','yaw','pitch','slot','seq']) && newData.child('x').isNumber() && newData.child('x').val() >= -18 && newData.child('x').val() <= 18 && newData.child('z').isNumber() && newData.child('z').val() >= -18 && newData.child('z').val() <= 18 && newData.child('yaw').isNumber() && newData.child('pitch').isNumber() && newData.child('pitch').val() >= -1.1 && newData.child('pitch').val() <= 1.1 && newData.child('slot').isNumber() && newData.child('seq').isNumber()"
+          }
+        },
+        "commands": {
+          "$uid": {
+            "$command": {
+              ".write": "auth != null && ((!data.exists() && newData.exists() && auth.uid === $uid && root.child('rooms/'+$room+'/meta/phase').val() === 'playing') || (!newData.exists() && root.child('rooms/'+$room+'/meta/host').val() === auth.uid))",
+              ".validate": "newData.hasChildren(['type','round','at']) && (newData.child('type').val() === 'shoot' || newData.child('type').val() === 'quizRequest' || newData.child('type').val() === 'quizAnswer') && newData.child('round').isNumber() && newData.child('at').isNumber()"
+            }
+          }
+        },
+        "state": {
+          ".write": "auth != null && root.child('rooms/'+$room+'/meta/host').val() === auth.uid",
+          ".validate": "newData.hasChildren(['round','status','players']) && newData.child('round').isNumber() && (newData.child('status').val() === 'playing' || newData.child('status').val() === 'ended')"
+        },
+        "challenges": {
+          "$uid": {
+            ".write": "auth != null && root.child('rooms/'+$room+'/meta/host').val() === auth.uid",
+            ".validate": "newData.hasChildren(['id','text','choices','round']) && newData.child('id').isString() && newData.child('text').isString() && newData.child('round').isNumber()"
+          }
+        },
+        "feedback": {
+          "$uid": {
+            ".write": "auth != null && root.child('rooms/'+$room+'/meta/host').val() === auth.uid",
+            ".validate": "newData.hasChildren(['id','round','correct','ammo','message']) && newData.child('id').isString() && newData.child('correct').isBoolean() && newData.child('ammo').isNumber() && newData.child('ammo').val() >= 0 && newData.child('ammo').val() <= 24"
+          }
+        },
+        "events": {
+          "$uid": {
+            ".write": "auth != null && root.child('rooms/'+$room+'/meta/host').val() === auth.uid",
+            ".validate": "newData.hasChildren(['seq','round','at','by','from','to','hit']) && newData.child('seq').isNumber() && newData.child('at').isNumber() && newData.child('by').isString() && newData.child('hit').isBoolean()"
+          }
+        }
+      }
+    }
+  }
+}
