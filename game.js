@@ -1078,7 +1078,7 @@ function updateKnockoutState(){
   const me=players.find(p=>p.id===myId);
   const remaining=Math.max(0,(me?.deadUntil||0)-serverNowClient());
   const dead=remaining>0;
-  setVisible($('knockoutOverlay'),!dead);
+  setVisible($('knockoutOverlay'),dead);
   if(dead){
     $('respawnSecs').textContent=Math.max(1,Math.ceil(remaining/1000));
     if(!myKnockoutShown){myKnockoutShown=true;closeQuiz();notify('아웃! 2초 후 부활해요.','bad');}
