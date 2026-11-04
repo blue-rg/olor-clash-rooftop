@@ -1589,7 +1589,7 @@ function createAvatar(p){
   const barrel=blaster;
   const ring=new THREE.Mesh(new THREE.RingGeometry(.61,.68,40),new THREE.MeshBasicMaterial({color,side:THREE.DoubleSide,transparent:true,opacity:.50,depthWrite:false}));
   ring.rotation.x=-Math.PI/2;ring.position.y=.045;group.add(ring);
-  const tag=makeNameTag(p);tag.position.y=2.82;group.add(tag);
+  const tag=makeNameTag(p);tag.position.y=3.72;group.add(tag);
   return {id:p.id,group,rig,torsoPivot,body,torso,head:face,headJoint,arms,legs,boots:[],pack:packColor,hat:hair,
     blaster,ring,phase:Math.random()*6,runStrength:0,lastPos:{x:p.x,z:p.z},recoil:0,hitAnim:0,
     targetX:p.x,targetZ:p.z,targetYaw:p.yaw,lastSegments:'',slot:p.slot,segments:[],spawnVersion:p.spawnVersion||0,spawnPulse:0,isSliding:false,slideBlend:0};
